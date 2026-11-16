@@ -1,0 +1,50 @@
+---
+/**
+ * Whisk (top-left) and brush-stroke wave (bottom) drawn behind every menu page.
+ * Figma stretches both pieces per frame, so each variant has its own SVG and box.
+ */
+interface Props {
+  variant: 'home' | 'classics' | 'tall';
+}
+
+const { variant } = Astro.props;
+
+const WHISK_WIDTH = '17.1602rem';
+const WAVE_WIDTH = '26.0764rem';
+
+const geometry = {
+  home: {
+    whisk: { top: '-7.5625rem', height: '23.75rem' },
+    wave: { bottom: '4.1875rem', height: '20.1875rem' },
+  },
+  classics: {
+    whisk: { top: '-7.5625rem', height: '23.75rem' },
+    wave: { bottom: '-5.5rem', height: '20.1875rem' },
+  },
+  tall: {
+    whisk: { top: '-10.8202rem', height: '33.9808rem' },
+    wave: { bottom: '-14.1961rem', height: '28.8836rem' },
+  },
+} as const;
+
+const { whisk, wave } = geometry[variant];
+const whiskSrc = `/menu-assets/backdrop/whisk-${variant}.svg`;
+const waveSrc = `/menu-assets/backdrop/wave-${variant}.svg`;
+---
+
+<div
+  class="pointer-events-none absolute left-[-1rem] z-0"
+  data-motion-backdrop
+  style={`top: ${whisk.top}; width: ${WHISK_WIDTH}; height: ${whisk.height}`}
+  aria-hidden="true"
+>
+  <img src={whiskSrc} alt="" class="block size-full max-w-none" />
+</div>
+<div
+  class="pointer-events-none absolute left-[-0.6875rem] z-0"
+  data-motion-backdrop
+  style={`bottom: ${wave.bottom}; width: ${WAVE_WIDTH}; height: ${wave.height}`}
+  aria-hidden="true"
+>
+  <img src={waveSrc} alt="" class="block size-full max-w-none" />
+</div>

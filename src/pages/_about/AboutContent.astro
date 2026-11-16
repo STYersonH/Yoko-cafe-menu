@@ -1,0 +1,32 @@
+---
+import type { Locale } from '../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../i18n/locales';
+import { useTranslations } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="px-5 pt-10 pb-16 tb:px-8 dk:px-12 dk:pt-20">
+  <p class="text-[0.75rem] tracking-[0.16em] uppercase opacity-50">{t.about.eyebrow}</p>
+  <h1 class="font-serif mt-4 max-w-[16ch] text-[2.25rem] leading-[1.05] dk:text-[3.5rem]">
+    {t.about.title}
+  </h1>
+  <p class="mt-6 max-w-[32rem] text-[1rem] leading-[1.5] opacity-70 dk:text-[1.125rem]">
+    {t.about.text}
+  </p>
+  <dl class="mt-10 max-w-[20rem] border-t border-current/15">
+    {
+      t.about.points.map((point) => (
+        <div class="flex items-baseline justify-between gap-6 border-b border-current/15 py-3 text-[0.875rem]">
+          <dt class="tracking-[0.12em] uppercase opacity-50">{point.label}</dt>
+          <dd class="font-serif text-[1.125rem] italic">{point.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>

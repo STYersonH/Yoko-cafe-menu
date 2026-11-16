@@ -1,0 +1,32 @@
+---
+description: i18n con rutas de Astro y copy tipado en es/en
+alwaysApply: true
+---
+
+# i18n
+
+Guía: `docs/i18n.md`. Arranque de un sitio: `docs/setup.md`. Intro de la home: `docs/preloader.md`. Recarga: `docs/scroll-restoration.md`.
+
+- Locales y default salen de `src/i18n/locales.ts`. `astro.config.mjs` los importa. Todos los idiomas llevan prefijo (`/en`, `/es`). `/` redirige al default.
+- `es.ts` define `Translations`. `en.ts` se tipa contra ese tipo, con las mismas keys.
+- Nada de strings de UI en Astro o TS. Namespace nuevo en `es` y `en`. La página pasa `lang` (`Astro.currentLocale`, o `DEFAULT_LOCALE` si falta).
+- Links a una ruta conocida: `getRelativeLocaleUrl` de `astro:i18n`. Cambio de idioma de la URL actual: `getAlternateLocaleUrl`.
+- Página nueva: secciones en `src/pages/_page/` (la carpeta `_` no es una URL). `src/components/` solo para lo que usan dos páginas, o el chrome. Ruta única en `src/pages/[lang]/`, con `getStaticPaths` sobre `LOCALES`.
+
+```astro
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Locale } from '../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../i18n/locales';
+import { useTranslations } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<a href={getRelativeLocaleUrl(lang)}>{t.home.titleLine1}</a>
+```

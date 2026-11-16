@@ -1,0 +1,26 @@
+---
+import type { Locale } from '../../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../../i18n/locales';
+import { useTranslations } from '../../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section
+  data-home-anchor
+  class="flex min-h-[calc(100dvh-4.75rem)] flex-col justify-end px-5 pb-10 tb:px-8 dk:min-h-[calc(100dvh-5.5rem)] dk:px-12 dk:pb-16"
+>
+  <p class="text-[0.75rem] tracking-[0.16em] uppercase opacity-50">{t.home.eyebrow}</p>
+  <h1 class="font-serif mt-4 max-w-[18ch] text-[2.75rem] leading-[0.95] tb:text-[3.5rem] dk:mt-6 dk:text-[5.5rem]">
+    {t.home.titleLine1}
+    <span class="mt-1 block italic">{t.home.titleLine2}</span>
+  </h1>
+  <p class="mt-6 max-w-[28rem] text-[1rem] leading-[1.5] opacity-70 dk:mt-8 dk:text-[1.125rem]">
+    {t.home.text}
+  </p>
+</section>

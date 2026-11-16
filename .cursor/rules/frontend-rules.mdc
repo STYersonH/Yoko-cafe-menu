@@ -1,0 +1,27 @@
+---
+description: Frontend units and breakpoints for Astro pages
+alwaysApply: true
+---
+
+# Frontend rules
+
+## Breakpoints
+
+| Prefix | Width |
+| --- | --- |
+| base (no prefix) | < 440px |
+| `tb:` | 440px |
+| `dk:` | 1025px |
+| `dk-lg:` | 1600px |
+
+Defined in `src/styles/global.css` as `--breakpoint-tb`, `--breakpoint-dk`, and `--breakpoint-dk-lg`.
+
+## Units
+
+Use `rem` for layout, type, and component sizing. This applies to Tailwind arbitrary values and inline styles. Root is 16: `px / 16 = rem`.
+
+Prefer a token class when it already equals the resolved rem. Keep `%` for Scale constraints, unitless or `%` line-heights, and `deg` for rotate.
+
+- `size-[7.5rem]` instead of `size-[120px]`
+- `max-w-[100rem]` instead of `max-w-[1600px]`
+- `style="width: 12rem"` instead of `style="width: 192px"`

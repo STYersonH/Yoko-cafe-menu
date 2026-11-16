@@ -1,0 +1,98 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Locale } from '../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../i18n/locales';
+import { useTranslations } from '../../i18n/utils';
+import { BACKDROP_BY_CATEGORY, MENU_ITEMS, type CategoryId } from '../../lib/menu';
+import Layout from '../../layouts/Layout.astro';
+import MenuBackdrop from './MenuBackdrop.astro';
+import DishViewer from './DishViewer.astro';
+import MenuItem from './MenuItem.astro';
+
+interface Props {
+  lang?: Locale;
+  category: CategoryId;
+}
+
+const { lang = DEFAULT_LOCALE, category } = Astro.props;
+const t = useTranslations(lang);
+const copy = t.menu.categories[category];
+const items = MENU_ITEMS[category];
+const count = String(items.length).padStart(2, '0');
+---
+
+<Layout lang={lang} title={copy.metaTitle} bodyClass="bg-sand">
+  <div class="bg-sand font-arvo relative min-h-dvh overflow-clip" data-menu-stage="category">
+    <div class="relative mx-auto w-full max-w-[24.375rem]">
+      <MenuBackdrop variant={BACKDROP_BY_CATEGORY[category]} />
+      <main class="relative z-10 px-6 pt-[1.5625rem] pb-8">
+        <a
+          href={getRelativeLocaleUrl(lang)}
+          data-motion="back"
+          class="font-baskerville text-moss-dark block w-fit text-[0.875rem] leading-[1.45] whitespace-pre transition-opacity hover:opacity-70"
+        >
+          {t.menu.back}
+        </a>
+
+        <header class="mt-[2.10625rem] flex h-[7.5625rem] flex-col items-center gap-9">
+          <div class="flex w-full flex-col items-center gap-3">
+            <div class="flex w-full items-center justify-between">
+              <div class="flex items-center gap-4" data-motion="title">
+                <img
+                  src="/menu-assets/common/bowl.svg"
+                  alt=""
+                  width="42.37"
+                  height="36"
+                  class="h-9 w-[2.6481rem] shrink-0"
+                />
+                <h1 class="font-baskerville text-moss text-[2rem] leading-[1.2]">{copy.title}</h1>
+              </div>
+              <p
+                class="font-baskerville text-moss text-[0.875rem] leading-[1.45]"
+                data-motion="meta"
+              >
+                {count}
+              </p>
+            </div>
+            <p class="text-moss-dark text-base leading-[1.45]" data-motion="meta">{copy.intro}</p>
+          </div>
+          <div class="bg-moss h-px w-[4.5625rem] opacity-85" aria-hidden="true" data-motion="rule">
+          </div>
+        </header>
+
+        <ul class="mt-[1.375rem] flex flex-col gap-4">
+          {
+            items.map((item, index) => (
+              <MenuItem
+                name={t.menu.items[item.id].name}
+                description={t.menu.items[item.id].description}
+                price={`${t.menu.currency} ${item.price}`}
+                note={'note' in t.menu.items[item.id] ? t.menu.items[item.id].note : undefined}
+                image={item.image}
+                photoSide={index % 2 === 0 ? 'right' : 'left'}
+                offsets={item.offsets}
+                divider={index < items.length - 1}
+              />
+            ))
+          }
+        </ul>
+
+        <footer
+          data-motion="footer"
+          class="border-moss/50 text-moss-dark mt-[1.1875rem] flex h-[4.0625rem] flex-col items-center border-t pt-4"
+        >
+          <p class="text-[0.75rem] leading-[1.45]">{t.menu.footer.note}</p>
+          <p class="font-baskerville mt-[0.4125rem] text-[0.75rem] leading-[1.45]">
+            {t.menu.footer.brand}
+          </p>
+        </footer>
+      </main>
+    </div>
+  </div>
+  <DishViewer closeLabel={t.menu.viewer.close} />
+</Layout>
+
+<script>
+  import './motion';
+  import './dish-viewer';
+</script>

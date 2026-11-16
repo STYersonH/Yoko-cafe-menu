@@ -1,0 +1,60 @@
+---
+name: di-download-raw-images
+description: >-
+  When a Figma design includes images, download raw fills via download_assets
+  (rawImages). Apply radius, rotation, and ratio on one Astro wrapper, same as
+  ffs-figma-faithful-structure. Breakpoints: base below 440, tb 440, dk 1025, dk-lg 1600.
+---
+
+# Figma images: raw assets only
+
+## Breakpoints
+
+| Prefix | Width |
+| --- | --- |
+| base (no prefix) | < 440px |
+| `tb:` | 440px |
+| `dk:` | 1025px |
+| `dk-lg:` | 1600px |
+
+Apply this rule whenever the Figma design (or `get_design_context` output) contains **raster images** (`<img>`, image fills, photos, illustrations as bitmaps).
+
+## Mandatory sourcing
+
+1. Call Figma MCP **`download_assets`** on the image node (or its parent that holds the fill).
+2. Download and commit files from **`rawImages`** only — original uploaded PNG/JPEG/WebP/GIF fills.
+3. Do not use `export` URLs as the committed source when the node has rotation, corner radius, masks, or effects.
+4. Do not treat `get_design_context` `https://…/api/mcp/asset/…` URLs as final if they bake transforms — prefer `rawImages` for anything you put in `public/`.
+
+## Treat in code, not in the file
+
+Apply in Tailwind on the Astro markup (not pre-baked into the asset):
+
+- `rounded-*` / overflow clip
+- `rotate-*` / `-rotate-*`
+- shadows, overlays, filters
+- `object-cover` + explicit width/height (or `size-full` inside a sized box)
+
+One Figma image node is **one wrapper + `<img>`**. Put `rounded-*`, `rotate-*`, `aspect-*`, and position **on that wrapper**. Do not add a shell around rotation. Sizes are `rem`.
+
+```astro
+<!-- do not ship: export already rotated/rounded, or a shell around the rotation -->
+<img src="/assets/hero-export.png" alt="" />
+
+<div class="-rotate-3">
+  <div class="overflow-hidden rounded-[1.25rem] aspect-[3/2]">
+    <img src="/assets/hero.png" alt="" />
+  </div>
+</div>
+
+<!-- ship this: raw fill; rotate, radius, and ratio on the one wrapper -->
+<div class="-rotate-3 overflow-hidden rounded-[1.25rem] aspect-[3/2] w-full">
+  <img src="/assets/hero.png" alt="…" class="size-full object-cover" />
+</div>
+```
+
+## Checklist before finishing
+
+- [ ] Files under `public/` are raw fills (no forced rotation or radius in the pixels)
+- [ ] Radius, rotate, and effects exist only as classes or styles on the single image wrapper
+- [ ] Every `<img>` has explicit sizing (no intrinsic blow-up via `height: auto` alone on icons or media boxes)

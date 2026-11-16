@@ -1,0 +1,67 @@
+---
+/**
+ * Full-screen preview of a dish. `dish-viewer.ts` fills the copy from the
+ * clicked item and flies the photo in from its spot on the list.
+ */
+interface Props {
+  closeLabel: string;
+}
+
+const { closeLabel } = Astro.props;
+---
+
+<div
+  data-dish-viewer
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="dish-viewer-name"
+  class="fixed inset-0 z-50 cursor-zoom-out"
+  hidden
+>
+  <div
+    data-dish-veil
+    class="bg-sand/45 absolute inset-0 opacity-0"
+    style="--blur: 0rem; backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur))"
+  >
+  </div>
+
+  <div
+    class="text-moss-dark relative mx-auto flex h-full max-w-[36rem] flex-col items-center justify-center gap-3 px-6 text-center"
+  >
+    <h2 id="dish-viewer-name" class="overflow-hidden pb-1">
+      <span
+        data-dish-viewer-name
+        class="font-baskerville tb:text-[2.25rem] block text-[1.75rem] leading-[1.2] font-semibold"
+      ></span>
+    </h2>
+
+    <!-- The PNGs carry wide transparent margins, so negative margins pull the copy close to the dish. -->
+    <div
+      data-dish-frame
+      class="-my-12 size-[min(96vw,34rem,58dvh)] shrink-0"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="flex max-w-[21rem] flex-col items-center gap-3">
+      <p data-dish-viewer-description class="font-arvo text-base leading-[1.5]"></p>
+      <p data-dish-viewer-price class="font-baskerville text-[1.25rem] leading-[1.45]"></p>
+      <p
+        data-dish-viewer-note
+        class="font-arvo text-moss text-[0.6875rem] leading-[1.45] tracking-[0.055rem]"
+      >
+      </p>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    data-dish-close
+    aria-label={closeLabel}
+    class="border-moss/40 text-moss-dark focus-visible:outline-moss hover:bg-moss/10 absolute top-5 right-5 grid size-11 cursor-pointer place-items-center rounded-full border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+  >
+    <svg viewBox="0 0 16 16" class="size-4" fill="none" stroke="currentColor" stroke-width="1.25">
+      <path d="M3 3l10 10M13 3L3 13" stroke-linecap="round"></path>
+    </svg>
+  </button>
+</div>

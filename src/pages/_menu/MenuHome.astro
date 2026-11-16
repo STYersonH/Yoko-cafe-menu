@@ -1,0 +1,113 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Locale } from '../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../i18n/locales';
+import { useTranslations } from '../../i18n/utils';
+import { CATEGORY_IDS } from '../../lib/menu';
+import MenuBackdrop from '../../components/menu/MenuBackdrop.astro';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+
+const icons = {
+  classics: {
+    src: '/menu-assets/home/classics-icon.svg',
+    width: 42.37,
+    height: 36,
+    class: 'h-9 w-[2.6481rem]',
+    align: 'items-center',
+  },
+  signatures: {
+    src: '/menu-assets/home/signatures-icon.svg',
+    width: 38.07,
+    height: 52,
+    class: 'h-[3.25rem] w-[2.3793rem]',
+    align: 'items-center',
+  },
+  snacks: {
+    src: '/menu-assets/home/snacks-icon.svg',
+    width: 33.06,
+    height: 36,
+    class: 'h-9 w-[2.066rem]',
+    align: 'items-end',
+  },
+} as const;
+---
+
+<div class="bg-sand font-arvo relative min-h-dvh overflow-clip" data-menu-stage="home">
+  <div class="relative mx-auto h-[56.875rem] w-full max-w-[24.375rem]">
+    <MenuBackdrop variant="home" />
+    <main class="absolute inset-0 z-10">
+      <img
+        src="/menu-assets/home/logo.svg"
+        alt={t.menu.brand}
+        data-motion="logo"
+        width="205"
+        height="100.5"
+        class="absolute top-[2.3125rem] left-1/2 h-[6.2822rem] w-[12.8091rem] max-w-none -translate-x-1/2"
+      />
+      <p
+        data-motion="subtitle"
+        class="text-moss-dark absolute top-[9.8125rem] left-1/2 -translate-x-1/2 text-[1.125rem] leading-[1.4] whitespace-pre"
+      >
+        {t.menu.subtitle}
+      </p>
+      <img
+        src="/menu-assets/home/line.svg"
+        alt=""
+        width="73"
+        height="2"
+        data-motion="rule"
+        class="absolute top-[14rem] left-1/2 h-0.5 w-[4.5625rem] max-w-none -translate-x-1/2"
+      />
+
+      <nav
+        aria-label={t.menu.navAriaLabel}
+        class="absolute top-[22.75rem] right-[1.625rem] flex flex-col items-end gap-10"
+      >
+        {
+          CATEGORY_IDS.map((id) => (
+            <a
+              href={getRelativeLocaleUrl(lang, id)}
+              data-motion="link"
+              class={`font-baskerville text-moss-light flex gap-5 text-2xl leading-[1.4] font-semibold transition-opacity hover:opacity-70 ${icons[id].align}`}
+            >
+              <img
+                src={icons[id].src}
+                alt=""
+                width={icons[id].width}
+                height={icons[id].height}
+                class={`max-w-none shrink-0 ${icons[id].class}`}
+              />
+              {t.menu.categories[id].title}
+            </a>
+          ))
+        }
+      </nav>
+
+      <h1
+        data-motion="title"
+        class="font-baskerville text-moss-light/40 absolute top-[14.5625rem] left-[1.15625rem] -translate-x-1/2 text-center text-[6.25rem] leading-[1.2] font-semibold"
+      >
+        <span class="sr-only">{t.menu.title}</span>
+        <span aria-hidden="true">
+          {
+            [...t.menu.title].map((letter) => (
+              <span class="block" data-motion-letter>
+                {letter}
+              </span>
+            ))
+          }
+        </span>
+      </h1>
+    </main>
+  </div>
+</div>
+
+<script>
+  import '../../components/menu/motion';
+</script>

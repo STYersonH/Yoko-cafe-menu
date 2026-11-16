@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+/* base < 440px · tb 440px · dk 1025px · dk-lg 1600px */
+@theme {
+  --breakpoint-dk-lg: 1600px;
+  --breakpoint-dk: 1025px;
+  --breakpoint-tb: 440px;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-baskerville: 'Libre Baskerville', ui-serif, Georgia, serif;
+  --font-arvo: 'Arvo', ui-serif, Georgia, serif;
+  --color-sand: #c2b6a6;
+  --color-moss: #626447;
+  --color-moss-dark: #484c35;
+  --color-moss-light: #727252;
+}

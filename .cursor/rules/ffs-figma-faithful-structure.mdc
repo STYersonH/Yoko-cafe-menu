@@ -1,0 +1,266 @@
+---
+description: >-
+  Figma→Astro: match the layer tree; build component instances as .astro files
+  under the page section first; split trees when layout differs; resolve sizes
+  per breakpoint in rem. Breakpoints: base <440, tb 440, dk 1025, dk-lg 1600.
+alwaysApply: false
+---
+
+# Figma: faithful structure + split breakpoints
+
+## Breakpoints
+
+| Prefix | Width |
+| --- | --- |
+| base (no prefix) | < 440px |
+| `tb:` | 440px |
+| `dk:` | 1025px |
+| `dk-lg:` | 1600px |
+
+`get_design_context` is a **reference**. Extra `div`s for `rotate`, `flex-none`, `hypot()`, or `cqw` are codegen, not layers. Trust **`data-name`** and the Figma tree.
+
+In `.astro`, the attribute is `class`, not `className`. `cn` is exported from `src/lib/cn.ts`. From a section file:
+
+```astro
+import { cn } from '../../../../lib/cn';
+```
+
+## 1. One Figma node → one DOM node
+
+- 1 Auto Layout / frame → 1 element.
+- 1 image node → 1 wrapper + `<img>`. Put `rounded-*`, `rotate-*`, `aspect-*`, and position **on that wrapper**.
+- Do not add shells around rotation or absolute children unless that frame exists in Figma.
+
+```astro
+<!-- MCP soup -->
+<div class="flex h-[23.5rem] items-center">
+  <div class="-rotate-3 flex-none">
+    <div class="overflow-hidden rounded-[1.25rem] aspect-[3/2]">
+      <img />
+    </div>
+  </div>
+</div>
+
+<!-- matches “about imagery > img 2” -->
+<div class="-rotate-3 overflow-hidden rounded-[1.25rem] aspect-[3/2] w-full">
+  <img class="size-full object-cover" alt="" />
+</div>
+```
+
+## 2. Figma components first, then the section
+
+If the target frame (or its children) uses **component instances** (`<instance …>` in `get_metadata`, or repeated identical subtrees with the same `data-name`):
+
+1. **Find** every distinct component used (by instance name / main-component link) — e.g. `seal`, `card`, `stat`, `button`.
+2. **Build each as its own `.astro` file first** — open the **main component** (or one representative instance) with `get_design_context` + `get_variable_defs` at base, tb, dk, and dk-lg as needed.
+3. Map Figma **component properties / variants / text overrides** to Astro props (`interface Props` + `Astro.props`): content, image, tone, **size**, and so on.
+4. **Only then** build the section layout and **compose** those components.
+
+### Component properties & variants
+
+Figma **component sets** expose properties (`size`, `state`, `tone`, boolean toggles, text/image slots). The Astro component must mirror them — do not collapse variants into `tb:` / `dk:` / `dk-lg:` unless the Figma file itself is a single variant that only changes by breakpoint.
+
+1. Open the **main component** (or each variant node) in Dev Mode / `get_design_context`.
+2. List every **component property** and its allowed values (e.g. `size`: `small` | `medium` | `large`).
+3. Implement **one Astro prop per property**, same names when sensible (`size`, not `property1`).
+4. Build a **styles map** keyed by variant value — pull numbers from `get_variable_defs` **on that variant node**, not from MCP fallbacks.
+5. The **section** picks the variant per breakpoint tree and passes it down:
+
+```astro
+---
+// Seal.astro — one prop per Figma property
+interface Props {
+  size: 'small' | 'medium' | 'large';
+}
+const { size } = Astro.props;
+---
+```
+
+```astro
+<!-- section file: do not fold the variant into responsive utilities -->
+<Seal class="tb:w-[14.4375rem] dk:w-[16.625rem]" />
+
+<!-- section file: pass the Figma `size` prop; each tree picks its variant -->
+<Seal size="large" />
+<Seal size="medium" />
+<Seal size="small" />
+```
+
+Do not substitute a Figma variant (`size=small`) with breakpoint CSS on a single component unless Figma has no variant and only tokens change at `tb` / `dk` / `dk-lg`.
+
+**Image frames inside a component:** use the **visible crop / mask / frame** dimensions from the design for `aspect-*` or `w` / `h` — see `alc-advanced-layouts-to-code` (never the raw asset’s intrinsic ratio). One wrapper, as in section 1.
+
+Do not inline-copy the same seal or card markup four times inside the section. Do not start the section file until the piece exists and matches Figma.
+
+```astro
+---
+import Seal from './Seal.astro';
+const seals = [];
+---
+
+<!-- component first — Figma `size` variant as a prop -->
+<section>
+  {seals.map((item) => <Seal size="large" {...item} />)}
+</section>
+```
+
+Reuse an existing project component only if it already matches that Figma component; otherwise create one named after the Figma component (`Seal`, not `SealsSectionCard`).
+
+Nested instances (a card that contains a badge): **innermost first**, then parents, then the section.
+
+### Where to put the file
+
+Page sections live under the page, as `.astro`. Section-local pieces are **siblings** of the section file — one file, no nested `components/` folder, no barrel.
+
+```
+src/pages/<Page>/_components/<SectionName>/
+  index.astro
+  Seal.astro
+```
+
+| Scope | Path |
+| --- | --- |
+| **Default** — built for one section only | `src/pages/<Page>/_components/<SectionName>/<ComponentName>.astro` |
+| **Explicitly shared** — user says reuse / design system | `src/components/<ComponentName>/index.astro` |
+
+Import the section-local piece with `import Seal from './Seal.astro';`.
+
+```
+src/components/Seal/index.astro
+
+src/pages/Home/_components/SealsSection/components/Seal/index.astro
+
+src/pages/Home/_components/SealsSection/
+  index.astro
+  Seal.astro
+```
+
+The first path puts a section-only piece in `src/components/`. The second adds a folder and a barrel inside the section. The third is the default: `index.astro` is the section, `Seal.astro` is the sibling.
+
+Promote to `src/components/<ComponentName>/index.astro` only when the user asks, or when a second section needs the same component.
+
+## 3. Desktop first, then smaller frames — two trees if layout differs
+
+Resolve **base (< 440px), tb (440px), dk (1025px), and dk-lg (1600px)** on each frame.
+
+If Figma frames are **not** the same tree (different parent, absolute vs flow, order, overlap):
+
+1. Build the larger tree so it matches that node (often `dk` / `dk-lg`).
+2. Build the compact tree so it matches the smaller nodes (base and `tb` may share one tree).
+3. Toggle with `hidden` / `dk:hidden`. Do not morph one DOM with a pile of `tb:` / `dk:` / `dk-lg:` on every inset.
+
+```astro
+<div class="hidden dk:block">{/* dk + dk-lg layout — inside the max-w container */}</div>
+<div class="dk:hidden">{/* base + tb layout */}</div>
+```
+
+Same tree at all sizes (only padding, type, or gap change) → **one** DOM + `tb:` / `dk:` / `dk-lg:` is fine. Omit a later prefix when the value matches the previous tier.
+
+Apply the same split **inside** a component when its internal layout differs by breakpoint.
+
+Layout variants are **`<div>` siblings** inside one section shell — not a second `<section>` per breakpoint.
+
+### Section shell (one `<section>` per Figma section frame)
+
+The section file owns the shell. Padding and max width belong to the Figma **section frame**, not to each layout variant.
+
+```astro
+---
+import { cn } from '../../../../lib/cn';
+import CommunityInfoSectionDesktop from './CommunityInfoSectionDesktop.astro';
+import CommunityInfoSectionCompact from './CommunityInfoSectionCompact.astro';
+---
+
+<!-- one <section> — padding + max-w; variants are layout-only divs -->
+<section
+  class={cn(
+    'relative w-full',
+    'px-4 tb:px-10 dk:px-20',
+    'pt-[1.75rem] tb:pt-10 dk:pt-[7.5rem]',
+    'pb-[3.25rem] tb:pb-20 dk:pb-[7.5rem]',
+  )}
+>
+  <div class="mx-auto w-full max-w-[100rem]">
+    <CommunityInfoSectionDesktop />
+    <CommunityInfoSectionCompact />
+  </div>
+</section>
+```
+
+| Layer | Role |
+| --- | --- |
+| `<section>` | Full width; **section padding** with `tb:` / `dk:` / `dk-lg:` from `get_variable_defs` on the section frame |
+| Inner `div` | `mx-auto w-full max-w-[100rem]` — caps content at the dk-lg frame (1600px) |
+| Layout variants | `hidden` / `dk:hidden` toggles + internal `gap`, order, stagger only. No padding on these |
+
+`CommunityInfoSectionDesktop` is `hidden dk:flex`. `CommunityInfoSectionCompact` is `dk:hidden`.
+
+Full-bleed backgrounds stay on `<section>` (`absolute`, edge-to-edge). Padding and `max-w` sit inside, or on the section with content in the centered column — never clip a bleed with `max-w` on the outermost node.
+
+Resolve **section-frame** padding once on the section; do not repeat it on the layout children.
+
+## 4. Sizes: resolve per breakpoint
+
+Token **names** in `get_design_context` often look the same (`spacing-8xl`, `Display lg`, `radius-xl`) but the **resolved px change by breakpoint**. The codegen fallback (e.g. `spacing-2xl,32px`) is frequently wrong.
+
+### Mandatory checks
+
+For **base, tb, dk, and dk-lg** nodes separately, call Figma MCP **`get_variable_defs`** on:
+
+- the section / Auto Layout frame (padding, gap)
+- **each Figma component** you implement (not only the outer section)
+- text layers (font size)
+- cards / media frames (radius, border)
+
+Record the **resolved number**, then convert to rem. Not the fallback in the class string.
+
+| Concern | Examples to verify |
+| --- | --- |
+| Spacing | `spacing-*` → `px` / `py` / `pt` / `pb` / `gap` |
+| Typography | `Body/*`, `Heading/*`, `Display/*`, or project classes like `h1` / `body-1` → `text-[…]` in rem |
+| Radius | `radius-*` → `rounded-[…]` |
+| Other sizes | fixed `w` / `h` / offsets from layout (still rem) |
+
+### Never
+
+```astro
+<!-- trusting MCP fallback — base spacing-2xl was 16, not 32 -->
+class="px-[var(--spacing-2xl,32px)]"
+
+<!-- one size for all breakpoints when variables differ -->
+class="text-[4.875rem]"
+```
+
+### Do
+
+```astro
+<!-- after get_variable_defs on each breakpoint node -->
+<!-- base 16, tb 40, dk 80 — omit dk-lg when it matches dk -->
+class="px-4 tb:px-10 dk:px-20"
+
+<!-- base 40, tb 60, dk 78. Append dk-lg:text-[…] only when 1600px resolves to a different px. -->
+class="text-[2.5rem] tb:text-[3.75rem] dk:text-[4.875rem]"
+
+<!-- base 14, tb 18, dk 20 -->
+class="rounded-[0.875rem] tb:rounded-[1.125rem] dk:rounded-[1.25rem]"
+```
+
+If the project already has CSS tokens that switch at `tb` / `dk` / `dk-lg`, map to those instead of hardcoding rem — still read each breakpoint once.
+
+## 5. Units: rem
+
+When project CSS tokens are missing:
+
+- Convert resolved Figma **px → rem** with root **16**: `value / 16`.
+- Arbitrary Tailwind: `py-[3.25rem]`, `text-[1.375rem]`, `rounded-[0.875rem]`.
+- Prefer scale utilities (`gap-6`, `px-4`, `px-10`) **only when they equal** the resolved rem.
+- Keep **%** for Scale constraints; unitless or `%` line-heights; **deg** for rotate.
+- Do not ship `…px` in `class`.
+
+## 6. Order of work
+
+1. base / tb / dk / dk-lg nodes (`get_metadata` / `get_design_context`) — note any `<instance>` / shared components.
+2. **Implement each Figma component** (properties → Astro props → styles map → rem via `get_variable_defs` per variant) **before** the section. Default path: `src/pages/<Page>/_components/<SectionName>/<ComponentName>.astro`.
+3. **One section shell** (`<section>` + padding + `max-w-[100rem]`) + layout variants as `<div>` children.
+4. Apply **resolved** rem (or project tokens) with `tb:` / `dk:` / `dk-lg:` on the shell and on layout internals as needed.
+5. Order classes (`ots-order-tailwindcss-styles`) and commit raw images (`di-download-raw-images`).

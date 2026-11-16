@@ -1,0 +1,66 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Locale } from '../../i18n/locales';
+import { DEFAULT_LOCALE, LOCALES } from '../../i18n/locales';
+import { getAlternateLocaleUrl, useTranslations } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+const pathname = Astro.url.pathname;
+
+const stripSlash = (path: string) => (path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path);
+const currentPath = stripSlash(pathname);
+
+const pageLinks = t.header.links.map((link) => ({
+  label: link.label,
+  href: link.slug ? getRelativeLocaleUrl(lang, link.slug) : getRelativeLocaleUrl(lang),
+}));
+---
+
+<header class="flex items-center justify-between gap-4 px-5 py-5 tb:px-8 dk:px-12 dk:py-6">
+  <a
+    href={getRelativeLocaleUrl(lang)}
+    class="font-serif text-[1.35rem] leading-none italic"
+    aria-label={t.header.brandAriaLabel}
+  >
+    {t.header.brand}
+  </a>
+  <nav aria-label={t.header.navAriaLabel} class="flex items-center gap-4 text-[0.75rem] tracking-[0.14em]">
+    {
+      pageLinks.map((link) => (
+        <a
+          href={link.href}
+          aria-current={stripSlash(link.href) === currentPath ? 'page' : undefined}
+          class:list={[
+            'uppercase',
+            stripSlash(link.href) === currentPath ? 'underline decoration-1 underline-offset-4' : 'opacity-40',
+          ]}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+  <nav aria-label={t.common.languageLabel} class="flex items-center gap-3 text-[0.75rem] tracking-[0.14em]">
+    {
+      LOCALES.map((locale) => (
+        <a
+          href={getAlternateLocaleUrl(pathname, locale)}
+          hreflang={locale}
+          lang={locale}
+          aria-current={locale === lang ? 'page' : undefined}
+          class:list={[
+            'uppercase',
+            locale === lang ? 'underline decoration-1 underline-offset-4' : 'opacity-40',
+          ]}
+        >
+          {t.common.localeNames[locale]}
+        </a>
+      ))
+    }
+  </nav>
+</header>

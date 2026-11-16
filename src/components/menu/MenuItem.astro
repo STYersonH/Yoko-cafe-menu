@@ -1,0 +1,98 @@
+---
+import { cn } from '../../lib/cn';
+import { DEFAULT_OFFSETS, pxToRem, type ItemOffsets } from '../../lib/menu';
+
+interface Props {
+  name: string;
+  description: string;
+  price: string;
+  image: string;
+  /** Side of the row where the photo sits. The copy takes the other half. */
+  photoSide: 'left' | 'right';
+  note?: string;
+  offsets?: Partial<ItemOffsets>;
+  divider?: boolean;
+}
+
+const { name, description, price, image, photoSide, note, offsets, divider = true } = Astro.props;
+const top = { ...DEFAULT_OFFSETS, ...offsets };
+---
+
+<li class="relative h-[11.25rem]" data-motion="item">
+  <div
+    data-motion-copy
+    class={cn(
+      'absolute inset-y-0 w-[52.0468%] text-moss-dark',
+      photoSide === 'right' ? 'left-0' : 'left-[47.9532%]',
+    )}
+  >
+    <h2
+      data-dish-name
+      class="font-baskerville absolute left-0 w-full text-base leading-6 font-semibold"
+      style={`top: ${pxToRem(top.title)}`}
+    >
+      {name}
+    </h2>
+    <p
+      data-dish-description
+      class="font-arvo absolute left-0 w-full text-[0.875rem] leading-[1.3125rem]"
+      style={`top: ${pxToRem(top.description)}`}
+    >
+      {description}
+    </p>
+    <p
+      data-dish-price
+      class="font-baskerville absolute left-0 w-full text-base leading-[1.45]"
+      style={`top: ${pxToRem(top.price)}`}
+    >
+      {price}
+    </p>
+    {
+      note && (
+        <p
+          data-dish-note
+          class="font-arvo text-moss absolute left-0 w-full text-[0.6875rem] leading-[1.45] tracking-[0.055rem]"
+          style={`top: ${pxToRem(top.note)}`}
+        >
+          {note}
+        </p>
+      )
+    }
+  </div>
+  <div
+    data-motion-photo
+    class={cn(
+      'absolute aspect-square w-[52.6316%]',
+      photoSide === 'right' ? 'left-[47.9532%]' : 'left-[-4.0936%]',
+    )}
+    style={`top: ${pxToRem(top.imageTop)}`}
+  >
+    <button
+      type="button"
+      data-dish-trigger
+      aria-haspopup="dialog"
+      aria-label={name}
+      class="group focus-visible:outline-moss block size-full cursor-zoom-in rounded-full focus-visible:outline-2 focus-visible:outline-offset-4"
+    >
+      <img
+        src={image}
+        alt=""
+        width="1024"
+        height="1024"
+        loading="lazy"
+        decoding="async"
+        data-dish-image
+        class="size-full max-w-none object-contain transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+      />
+    </button>
+  </div>
+  {
+    divider && (
+      <div
+        data-motion-divider
+        class="bg-moss absolute bottom-0 left-0 h-px w-full opacity-[0.32]"
+        aria-hidden="true"
+      />
+    )
+  }
+</li>

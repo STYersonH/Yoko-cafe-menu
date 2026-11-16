@@ -1,0 +1,30 @@
+---
+import type { Locale } from '../../../i18n/locales';
+import { DEFAULT_LOCALE } from '../../../i18n/locales';
+import { useTranslations } from '../../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="border-t border-current/15 px-5 py-12 tb:px-8 dk:px-12 dk:py-20">
+  <p class="text-[0.75rem] tracking-[0.16em] uppercase opacity-50">{t.homeSteps.eyebrow}</p>
+  <h2 class="font-serif mt-4 max-w-[16ch] text-[2rem] leading-[1.05] dk:text-[3rem]">
+    {t.homeSteps.title}
+  </h2>
+  <ol class="mt-10 grid gap-8 dk:mt-14 dk:grid-cols-3 dk:gap-10">
+    {
+      t.homeSteps.items.map((item) => (
+        <li>
+          <p class="font-serif text-[1.25rem] italic opacity-40">{item.index}</p>
+          <h3 class="mt-3 text-[1rem] tracking-[0.04em]">{item.title}</h3>
+          <p class="mt-2 max-w-[22rem] text-[0.9375rem] leading-[1.5] opacity-70">{item.text}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>
